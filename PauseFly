@@ -1,0 +1,112 @@
+-- Fly Универсальный - основной скрипт
+local FlyUniversal = {}
+
+-- Конфигурация
+FlyUniversal.Settings = {
+    Speed = 50,
+    TurnSpeed = 1,
+    VerticalSpeed = 25,
+    ToggleKey = Enum.KeyCode.F,
+    Enabled = false
+}
+
+-- Сервисы
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+-- Локальные переменные
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+-- GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FlyUniversalGUI"
+screenGui.Parent = player.PlayerGui
+
+local statusText = Instance.new("TextLabel")
+statusText.Size = UDim2.new(0, 200, 0, 30)
+statusText.Position = UDim2.new(0.5, -100, 0.1, 0)
+statusText.Text = "Fly: OFF (Press F)"
+statusText.BackgroundTransparency = 0.7
+statusText.TextColor3 = Color3.new(1, 0, 0)
+statusText.Parent = screenGui
+
+-- Функции полета
+local function enableFly()
+    humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+    FlyUniversal.Enabled = true
+    statusText.Text = "Fly: ON (Press F)"
+    statusText.TextColor3 = Color3.fromRGB(0, 255, 0)
+end
+
+local function disableFly()
+    humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+    FlyUniversal.Enabled = false
+    statusText.Text = "Fly: OFF (Press F)"
+    statusText.TextColor3 = Color3.fromRGB(255, 0, 0)
+end
+
+-- Обработка ввода
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == FlyUniversal.Settings.ToggleKey then
+        if FlyUniversal.Enabled then
+            disableFly()
+        else
+            enableFly()
+        end
+    end
+end)
+
+-- Основной цикл полета
+RunService.Heartbeat:Connect(function()
+    if FlyUniversal.Enabled and rootPart then
+        local camera = workspace.CurrentCamera
+        local direction = Vector3.new()
+        
+        -- Движение вперед/назад
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+            direction = direction + camera.CFrame.LookVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+            direction = direction - camera.CFrame.LookVector
+        end
+        
+        -- Движение влево/вправо
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+            direction = direction - camera.CFrame.RightVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+            direction = direction + camera.CFrame.RightVector
+        end
+        
+        -- Движение вверх/вниз
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+            direction = direction + Vector3.new(0, 1, 0)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+            direction = direction - Vector3.new(0, 1, 0)
+        end
+        
+        -- Нормализация и применение скорости
+        if direction.Magnitude > 0 then
+            direction = direction.Unit * FlyUniversal.Settings.Speed
+        end
+        
+        -- Применение движения
+        rootPart.Velocity = direction
+        humanoid.PlatformStand = true
+    end
+end)
+
+-- Автоотключение при смерти
+humanoid.Died:Connect(function()
+    disableFly()
+end)
+
+-- Инициализация
+disableFly()
+
+return FlyUniversal
