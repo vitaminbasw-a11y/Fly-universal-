@@ -2,7 +2,7 @@
 local FlyUniversal = {}
 
 -- Конфигурация
-FlyUniversal.Settings = {
+FlyUniversalMobile.Settings = {
     Speed = 50,
     TurnSpeed = 1,
     VerticalSpeed = 25,
